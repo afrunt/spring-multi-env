@@ -76,6 +76,7 @@ public class ContextBuilderTest {
         ContextBuilder.AnnotationConfigContextBuilder builder = new ContextBuilder.AnnotationConfigContextBuilder()
                 .activeProfiles()
                 .cast();
+        assertNotNull(builder);
     }
 
     private ContextBuilder createPackageContextBuilder() {
