@@ -20,6 +20,20 @@ public abstract class ContextBuilder {
     protected Set<String> defaultProfiles = new HashSet<>();
     protected CompositePropertySource propertySource = new CompositePropertySource("env-composite-property-source");
 
+    public static AnnotationConfigContextBuilder annotationConfig() {
+        return new AnnotationConfigContextBuilder();
+    }
+
+    public static AnnotationConfigContextBuilder annotationConfig(String... basePackages) {
+        return annotationConfig()
+                .basePackages(basePackages);
+    }
+
+    public static AnnotationConfigContextBuilder annotationConfig(Class<?>... componentClasses) {
+        return annotationConfig()
+                .componentClasses(componentClasses);
+    }
+
     public abstract GenericApplicationContext build();
 
     public ContextBuilder activeProfiles(Collection<String> activeProfiles) {
@@ -55,13 +69,17 @@ public abstract class ContextBuilder {
         return addPropertySource(new MapPropertySource(randomName(), new HashMap<>(source)));
     }
 
-    public ContextBuilder addPropertiesStreamPropertySource(InputStream is) {
+    public ContextBuilder addPropertiesPropertySource(Properties properties) {
+        addPropertySource(new PropertiesPropertySource(randomName(), properties));
+        return this;
+    }
+
+    public ContextBuilder addPropertiesPropertySource(InputStream is) {
         notNull(is, "properties input stream cannot be null");
         try {
             Properties properties = new Properties();
             properties.load(is);
-            addPropertySource(new PropertiesPropertySource(randomName(), properties));
-            return this;
+            return addPropertiesPropertySource(properties);
         } catch (IOException e) {
             throw new RuntimeException("Error reading properties from input stream", e);
         }
@@ -71,29 +89,15 @@ public abstract class ContextBuilder {
         return UUID.randomUUID().toString();
     }
 
-/*    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
     public <T> T cast() {
         return (T) this;
-    }*/
+    }
 
     protected void validateConfiguration() {
         notNull(propertySource, "propertySource cannot be null");
         notNull(activeProfiles, "activeProfiles cannot be null");
         notNull(defaultProfiles, "defaultProfiles cannot be null");
-    }
-
-    public static AnnotationConfigContextBuilder annotationConfig() {
-        return new AnnotationConfigContextBuilder();
-    }
-
-    public static AnnotationConfigContextBuilder annotationConfig(String... basePackages) {
-        return annotationConfig()
-                .basePackages(basePackages);
-    }
-
-    public static AnnotationConfigContextBuilder annotationConfig(Class<?>... componentClasses) {
-        return annotationConfig()
-                .componentClasses(componentClasses);
     }
 
     public static class AnnotationConfigContextBuilder extends ContextBuilder {

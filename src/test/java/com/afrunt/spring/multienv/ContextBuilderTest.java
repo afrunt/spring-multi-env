@@ -54,8 +54,8 @@ public class ContextBuilderTest {
     public void testPropertiesFromFromFile() {
         GenericApplicationContext ctx = createPackageContextBuilder()
                 .resetPropertySource()
-                .addPropertiesStreamPropertySource(getClass().getClassLoader().getResourceAsStream("env-0.properties"))
-                .addPropertiesStreamPropertySource(getClass().getClassLoader().getResourceAsStream("env-1.properties"))
+                .addPropertiesPropertySource(getClass().getClassLoader().getResourceAsStream("env-0.properties"))
+                .addPropertiesPropertySource(getClass().getClassLoader().getResourceAsStream("env-1.properties"))
                 .build();
 
         assertEquals("higherPriorityValue", ctx.getBean(SimpleBean.class).getEnvProp());
@@ -67,8 +67,15 @@ public class ContextBuilderTest {
         assertNotNull(is);
         is.close();
         assertThrows(RuntimeException.class, () -> createPackageContextBuilder()
-                .addPropertiesStreamPropertySource(is)
+                .addPropertiesPropertySource(is)
         );
+    }
+
+    @Test
+    public void testCast() {
+        ContextBuilder.AnnotationConfigContextBuilder builder = new ContextBuilder.AnnotationConfigContextBuilder()
+                .activeProfiles()
+                .cast();
     }
 
     private ContextBuilder createPackageContextBuilder() {
