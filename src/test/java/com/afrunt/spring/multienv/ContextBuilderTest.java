@@ -40,7 +40,8 @@ public class ContextBuilderTest {
 
     @Test
     public void testPropertySourcePriority(){
-        GenericApplicationContext ctx = ContextBuilder.annotationConfig("com.afrunt.spring.multienv.ctx.simple")
+        GenericApplicationContext ctx = ContextBuilder
+                .annotationConfig("com.afrunt.spring.multienv.ctx.simple")
                 .addMapPropertySource(Map.of("envProp", "envValue"))
                 .addMapPropertySource(Map.of("envProp", "higherPriorityValue"))
                 .build();
