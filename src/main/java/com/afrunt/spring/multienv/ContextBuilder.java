@@ -42,7 +42,7 @@ public abstract class ContextBuilder {
 
     public ContextBuilder addMapPropertySource(Map<String, Object> source) {
         Assert.notNull(source, "source map cannot be null");
-        return addPropertySource(new MapPropertySource(UUID.randomUUID().toString(), source));
+        return addPropertySource(new MapPropertySource(UUID.randomUUID().toString(), new HashMap<>(source)));
     }
 
 /*    @SuppressWarnings("unchecked")
