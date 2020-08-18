@@ -2,6 +2,7 @@ package com.afrunt.spring.multienv;
 
 import com.afrunt.spring.multienv.ctx.simple.ProductionProfileBean;
 import com.afrunt.spring.multienv.ctx.simple.SimpleBean;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.GenericApplicationContext;
 
@@ -45,5 +46,10 @@ public class ContextBuilderTest {
                 .build();
 
         assertEquals("higherPriorityValue", ctx.getBean(SimpleBean.class).getEnvProp());
+    }
+
+    @Test
+    public void testEmptyPackagesAndClasses(){
+        Assertions.assertThrows(IllegalStateException.class, () -> ContextBuilder.annotationConfig().build());
     }
 }
