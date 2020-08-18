@@ -4,11 +4,16 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.CompositePropertySource;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.core.env.PropertySource;
 import org.springframework.util.Assert;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.springframework.util.Assert.notNull;
 
 public abstract class ContextBuilder {
     protected Set<String> activeProfiles = new HashSet<>();
@@ -35,14 +40,35 @@ public abstract class ContextBuilder {
         return defaultProfiles(Arrays.asList(defaultProfiles));
     }
 
+    public ContextBuilder resetPropertySource() {
+        propertySource = new CompositePropertySource(randomName());
+        return this;
+    }
+
     public ContextBuilder addPropertySource(PropertySource<?> propertySource) {
         this.propertySource.addFirstPropertySource(propertySource);
         return this;
     }
 
     public ContextBuilder addMapPropertySource(Map<String, Object> source) {
-        Assert.notNull(source, "source map cannot be null");
-        return addPropertySource(new MapPropertySource(UUID.randomUUID().toString(), new HashMap<>(source)));
+        notNull(source, "source map cannot be null");
+        return addPropertySource(new MapPropertySource(randomName(), new HashMap<>(source)));
+    }
+
+    public ContextBuilder addPropertiesStreamPropertySource(InputStream is) {
+        notNull(is, "properties input stream cannot be null");
+        try {
+            Properties properties = new Properties();
+            properties.load(is);
+            addPropertySource(new PropertiesPropertySource(randomName(), properties));
+            return this;
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading properties from input stream", e);
+        }
+    }
+
+    protected String randomName() {
+        return UUID.randomUUID().toString();
     }
 
 /*    @SuppressWarnings("unchecked")
@@ -51,9 +77,9 @@ public abstract class ContextBuilder {
     }*/
 
     protected void validateConfiguration() {
-        Assert.notNull(propertySource, "propertySource cannot be null");
-        Assert.notNull(activeProfiles, "activeProfiles cannot be null");
-        Assert.notNull(defaultProfiles, "defaultProfiles cannot be null");
+        notNull(propertySource, "propertySource cannot be null");
+        notNull(activeProfiles, "activeProfiles cannot be null");
+        notNull(defaultProfiles, "defaultProfiles cannot be null");
     }
 
     public static AnnotationConfigContextBuilder annotationConfig() {
@@ -96,7 +122,7 @@ public abstract class ContextBuilder {
         }
 
         public AnnotationConfigContextBuilder basePackages(String... basePackages) {
-            Assert.notNull(basePackages, "basePackages cannot be null");
+            notNull(basePackages, "basePackages cannot be null");
             Assert.noNullElements(basePackages, "basePackage cannot be null");
 
             this.basePackages = Arrays.stream(basePackages)
@@ -105,7 +131,7 @@ public abstract class ContextBuilder {
         }
 
         public AnnotationConfigContextBuilder componentClasses(Class<?>... componentClasses) {
-            Assert.notNull(componentClasses, "componentClasses cannot be null");
+            notNull(componentClasses, "componentClasses cannot be null");
             Assert.noNullElements(componentClasses, "componentClass cannot be null");
 
             this.componentClasses = Arrays.stream(componentClasses)
@@ -117,8 +143,8 @@ public abstract class ContextBuilder {
         @Override
         protected void validateConfiguration() {
             super.validateConfiguration();
-            Assert.notNull(basePackages, "basePackages cannot be null");
-            Assert.notNull(componentClasses, "componentClasses cannot be null");
+            notNull(basePackages, "basePackages cannot be null");
+            notNull(componentClasses, "componentClasses cannot be null");
 
             if (basePackages.isEmpty() && componentClasses.isEmpty()) {
                 throw new IllegalStateException("Either basePackages or componentClasses should be provided");

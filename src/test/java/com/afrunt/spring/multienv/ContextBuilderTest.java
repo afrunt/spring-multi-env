@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.support.GenericApplicationContext;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -45,6 +47,27 @@ public class ContextBuilderTest {
                 .activeProfiles()
                 .build()
                 .getBean(ProductionProfileBean.class)
+        );
+    }
+
+    @Test
+    public void testPropertiesFromFromFile() {
+        GenericApplicationContext ctx = createPackageContextBuilder()
+                .resetPropertySource()
+                .addPropertiesStreamPropertySource(getClass().getClassLoader().getResourceAsStream("env-0.properties"))
+                .addPropertiesStreamPropertySource(getClass().getClassLoader().getResourceAsStream("env-1.properties"))
+                .build();
+
+        assertEquals("higherPriorityValue", ctx.getBean(SimpleBean.class).getEnvProp());
+    }
+
+    @Test
+    public void testFailedPropertiesFromFromFile() throws IOException {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("env-0.properties");
+        assertNotNull(is);
+        is.close();
+        assertThrows(RuntimeException.class, () -> createPackageContextBuilder()
+                .addPropertiesStreamPropertySource(is)
         );
     }
 
