@@ -10,71 +10,96 @@ import org.springframework.core.env.PropertySource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
-import static org.springframework.util.Assert.noNullElements;
 import static org.springframework.util.Assert.notNull;
 
-public abstract class ContextBuilder {
-    protected Set<String> activeProfiles = new HashSet<>();
-    protected Set<String> defaultProfiles = new HashSet<>();
-    protected CompositePropertySource propertySource = new CompositePropertySource("env-composite-property-source");
+public class ContextBuilder<T extends GenericApplicationContext> {
+    private final T originalInstance;
+    private Set<String> activeProfiles = new HashSet<>();
+    private Set<String> defaultProfiles = new HashSet<>();
+    private CompositePropertySource propertySource = new CompositePropertySource("env-composite-property-source");
+    private Function<T, T> contextCustomizer = ctx -> ctx;
 
-    public static AnnotationConfigContextBuilder annotationConfig() {
-        return new AnnotationConfigContextBuilder();
+    public ContextBuilder(T originalInstance) {
+        this.originalInstance = originalInstance;
     }
 
-    public static AnnotationConfigContextBuilder annotationConfig(String... basePackages) {
+    public static ContextBuilder<AnnotationConfigApplicationContext> annotationConfig(String... basePackages) {
         return annotationConfig()
-                .basePackages(basePackages);
+                .customizer(ctx -> {
+                    ctx.scan(basePackages);
+                    return ctx;
+                });
     }
 
-    public static AnnotationConfigContextBuilder annotationConfig(Class<?>... componentClasses) {
+    public static ContextBuilder<AnnotationConfigApplicationContext> annotationConfig(Class<?>... componentClasses) {
         return annotationConfig()
-                .componentClasses(componentClasses);
+                .customizer(ctx -> {
+                    ctx.register(componentClasses);
+                    return ctx;
+                });
     }
 
-    public abstract GenericApplicationContext build();
+    private static ContextBuilder<AnnotationConfigApplicationContext> annotationConfig() {
+        return new ContextBuilder<>(new AnnotationConfigApplicationContext());
+    }
 
-    public ContextBuilder activeProfiles(Collection<String> activeProfiles) {
+    public GenericApplicationContext build() {
+        validateConfiguration();
+
+        T ctx = populateEnvironmentState(originalInstance);
+        ctx = contextCustomizer.apply(ctx);
+
+        ctx.refresh();
+
+        return ctx;
+    }
+
+    public ContextBuilder<T> customizer(Function<T, T> customizer) {
+        contextCustomizer = customizer;
+        return this;
+    }
+
+    public ContextBuilder<T> activeProfiles(Collection<String> activeProfiles) {
         this.activeProfiles = new HashSet<>(activeProfiles);
         return this;
     }
 
-    public ContextBuilder activeProfiles(String... activeProfiles) {
+    public ContextBuilder<T> activeProfiles(String... activeProfiles) {
         return activeProfiles(Arrays.asList(activeProfiles));
     }
 
-    public ContextBuilder defaultProfiles(Collection<String> defaultProfiles) {
+    public ContextBuilder<T> defaultProfiles(Collection<String> defaultProfiles) {
         this.defaultProfiles = new HashSet<>(defaultProfiles);
         return this;
     }
 
-    public ContextBuilder defaultProfiles(String... defaultProfiles) {
+    public ContextBuilder<T> defaultProfiles(String... defaultProfiles) {
         return defaultProfiles(Arrays.asList(defaultProfiles));
     }
 
-    public ContextBuilder resetPropertySource() {
+    public ContextBuilder<T> resetPropertySource() {
         propertySource = new CompositePropertySource(randomName());
         return this;
     }
 
-    public ContextBuilder addPropertySource(PropertySource<?> propertySource) {
+    public ContextBuilder<T> addPropertySource(PropertySource<?> propertySource) {
         this.propertySource.addFirstPropertySource(propertySource);
         return this;
     }
 
-    public ContextBuilder addMapPropertySource(Map<String, Object> source) {
+    public ContextBuilder<T> addMapPropertySource(Map<String, Object> source) {
         notNull(source, "source map cannot be null");
         return addPropertySource(new MapPropertySource(randomName(), new HashMap<>(source)));
     }
 
-    public ContextBuilder addPropertiesPropertySource(Properties properties) {
+    public ContextBuilder<T> addPropertiesPropertySource(Properties properties) {
         addPropertySource(new PropertiesPropertySource(randomName(), properties));
         return this;
     }
 
-    public ContextBuilder addPropertiesPropertySource(InputStream is) {
+    public ContextBuilder<T> addPropertiesPropertySource(InputStream is) {
         notNull(is, "properties input stream cannot be null");
         try {
             Properties properties = new Properties();
@@ -89,75 +114,16 @@ public abstract class ContextBuilder {
         return UUID.randomUUID().toString();
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> T cast() {
-        return (T) this;
-    }
-
     protected void validateConfiguration() {
         notNull(propertySource, "propertySource cannot be null");
         notNull(activeProfiles, "activeProfiles cannot be null");
         notNull(defaultProfiles, "defaultProfiles cannot be null");
     }
 
-    protected <T extends GenericApplicationContext> T populateEnvironmentState(T ctx) {
+    protected T populateEnvironmentState(T ctx) {
         ctx.getEnvironment().setActiveProfiles(activeProfiles.toArray(new String[]{}));
         ctx.getEnvironment().setDefaultProfiles(defaultProfiles.toArray(new String[]{}));
         ctx.getEnvironment().getPropertySources().addLast(propertySource);
         return ctx;
-    }
-
-    public static class AnnotationConfigContextBuilder extends ContextBuilder {
-        private List<String> basePackages = new ArrayList<>();
-        private List<Class<?>> componentClasses = new ArrayList<>();
-
-        @Override
-        public AnnotationConfigApplicationContext build() {
-            validateConfiguration();
-            AnnotationConfigApplicationContext ctx = populateEnvironmentState(new AnnotationConfigApplicationContext());
-
-            if (!basePackages.isEmpty()) {
-                ctx.scan(basePackages.toArray(new String[]{}));
-            }
-
-            if (!componentClasses.isEmpty()) {
-                ctx.register(componentClasses.toArray(new Class[]{}));
-            }
-
-            ctx.refresh();
-
-            return ctx;
-        }
-
-        public AnnotationConfigContextBuilder basePackages(String... basePackages) {
-            notNull(basePackages, "basePackages cannot be null");
-            noNullElements(basePackages, "basePackage cannot be null");
-
-            this.basePackages = Arrays.stream(basePackages)
-                    .collect(Collectors.toList());
-
-            return this;
-        }
-
-        public AnnotationConfigContextBuilder componentClasses(Class<?>... componentClasses) {
-            notNull(componentClasses, "componentClasses cannot be null");
-            noNullElements(componentClasses, "componentClass cannot be null");
-
-            this.componentClasses = Arrays.stream(componentClasses)
-                    .collect(Collectors.toList());
-
-            return this;
-        }
-
-        @Override
-        protected void validateConfiguration() {
-            super.validateConfiguration();
-            notNull(basePackages, "basePackages cannot be null");
-            notNull(componentClasses, "componentClasses cannot be null");
-
-            if (basePackages.isEmpty() && componentClasses.isEmpty()) {
-                throw new IllegalStateException("Either basePackages or componentClasses should be provided");
-            }
-        }
     }
 }

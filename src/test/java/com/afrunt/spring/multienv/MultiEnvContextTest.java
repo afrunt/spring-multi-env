@@ -1,11 +1,11 @@
 package com.afrunt.spring.multienv;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import com.afrunt.spring.multienv.ctx.simple.SimpleBean;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MultiEnvContextTest {
     @Test

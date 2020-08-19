@@ -2,9 +2,9 @@ package com.afrunt.spring.multienv;
 
 import com.afrunt.spring.multienv.ctx.simple.ProductionProfileBean;
 import com.afrunt.spring.multienv.ctx.simple.SimpleBean;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 
 import java.io.IOException;
@@ -37,11 +37,6 @@ public class ContextBuilderTest {
     }
 
     @Test
-    public void testEmptyPackagesAndClasses() {
-        Assertions.assertThrows(IllegalStateException.class, () -> ContextBuilder.annotationConfig().build());
-    }
-
-    @Test
     public void testWithoutProductionProfile() {
         assertThrows(NoSuchBeanDefinitionException.class, () -> createPackageContextBuilder()
                 .activeProfiles()
@@ -71,15 +66,7 @@ public class ContextBuilderTest {
         );
     }
 
-    @Test
-    public void testCast() {
-        ContextBuilder.AnnotationConfigContextBuilder builder = new ContextBuilder.AnnotationConfigContextBuilder()
-                .activeProfiles()
-                .cast();
-        assertNotNull(builder);
-    }
-
-    private ContextBuilder createPackageContextBuilder() {
+    private ContextBuilder<AnnotationConfigApplicationContext> createPackageContextBuilder() {
         return ContextBuilder
                 .annotationConfig("com.afrunt.spring.multienv.ctx.simple")
                 .addMapPropertySource(Map.of("envProp", "envValue"))
@@ -87,7 +74,7 @@ public class ContextBuilderTest {
                 .defaultProfiles();
     }
 
-    private ContextBuilder createClassesBuilder() {
+    private ContextBuilder<AnnotationConfigApplicationContext> createClassesBuilder() {
         return ContextBuilder
                 .annotationConfig(SimpleBean.class, ProductionProfileBean.class)
                 .addMapPropertySource(Map.of("envProp", "envValue"))
