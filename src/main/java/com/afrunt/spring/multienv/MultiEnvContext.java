@@ -1,15 +1,17 @@
 package com.afrunt.spring.multienv;
 
+import org.springframework.context.support.GenericApplicationContext;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class MultiEnvContext implements AutoCloseable {
-    private final Map<String, ContextBuilder> contextBuildersMap;
+    private final Map<String, ContextBuilder<? extends GenericApplicationContext>> contextBuildersMap;
     private final Map<String, EnvContext> envContextMap = new HashMap<>();
     private boolean started = false;
     private boolean lazyInitialization = false;
 
-    public MultiEnvContext(Map<String, ContextBuilder> contextBuildersMap) {
+    public MultiEnvContext(Map<String, ContextBuilder<? extends GenericApplicationContext>> contextBuildersMap) {
         this.contextBuildersMap = new HashMap<>(contextBuildersMap);
     }
 
