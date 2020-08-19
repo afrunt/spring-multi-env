@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.springframework.util.Assert.notNull;
 
@@ -25,20 +26,27 @@ public class ContextBuilder<T extends GenericApplicationContext> {
         this.originalInstance = originalInstance;
     }
 
-    public static ContextBuilder<AnnotationConfigApplicationContext> annotationConfig(String... basePackages) {
+    public static ContextBuilder<AnnotationConfigApplicationContext> annotationConfig(Supplier<List<String>> basePackagesSupplier, Supplier<List<Class<?>>> componentClassesSupplier) {
         return annotationConfig()
                 .customizer(ctx -> {
-                    ctx.scan(basePackages);
+                    List<String> basePackages = basePackagesSupplier.get();
+                    List<Class<?>> componentClasses = componentClassesSupplier.get();
+                    if (!basePackages.isEmpty()) {
+                        ctx.scan(basePackages.toArray(new String[]{}));
+                    }
+                    if (!componentClasses.isEmpty()) {
+                        ctx.register(componentClasses.toArray(new Class[]{}));
+                    }
                     return ctx;
                 });
     }
 
+    public static ContextBuilder<AnnotationConfigApplicationContext> annotationConfig(String... basePackages) {
+        return annotationConfig(() -> Arrays.asList(basePackages), Collections::emptyList);
+    }
+
     public static ContextBuilder<AnnotationConfigApplicationContext> annotationConfig(Class<?>... componentClasses) {
-        return annotationConfig()
-                .customizer(ctx -> {
-                    ctx.register(componentClasses);
-                    return ctx;
-                });
+        return annotationConfig(Collections::emptyList, () -> Arrays.asList(componentClasses));
     }
 
     private static ContextBuilder<AnnotationConfigApplicationContext> annotationConfig() {

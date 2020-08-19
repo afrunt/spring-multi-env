@@ -9,6 +9,7 @@ import org.springframework.context.support.GenericApplicationContext;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -17,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ContextBuilderTest {
     @Test
     public void testHappyPath() {
-        Stream.of(createPackageContextBuilder(), createClassesBuilder())
+        Stream.of(createPackageContextBuilder(), createClassesBuilder(), createPackagesAndClassesBuilder())
                 .map(ContextBuilder::build)
                 .forEach(ctx -> {
                     SimpleBean simpleBean = ctx.getBean(SimpleBean.class);
@@ -77,6 +78,17 @@ public class ContextBuilderTest {
     private ContextBuilder<AnnotationConfigApplicationContext> createClassesBuilder() {
         return ContextBuilder
                 .annotationConfig(SimpleBean.class, ProductionProfileBean.class)
+                .addMapPropertySource(Map.of("envProp", "envValue"))
+                .activeProfiles("production")
+                .defaultProfiles();
+    }
+
+    private ContextBuilder<AnnotationConfigApplicationContext> createPackagesAndClassesBuilder() {
+        return ContextBuilder
+                .annotationConfig(
+                        () -> List.of("com.afrunt.spring.multienv.ctx.simple"),
+                        () -> List.of(SimpleBean.class, ProductionProfileBean.class)
+                )
                 .addMapPropertySource(Map.of("envProp", "envValue"))
                 .activeProfiles("production")
                 .defaultProfiles();
