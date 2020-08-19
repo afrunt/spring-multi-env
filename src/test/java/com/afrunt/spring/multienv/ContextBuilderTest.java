@@ -86,8 +86,8 @@ public class ContextBuilderTest {
     private ContextBuilder<AnnotationConfigApplicationContext> createPackagesAndClassesBuilder() {
         return ContextBuilder
                 .annotationConfig(
-                        () -> List.of("com.afrunt.spring.multienv.ctx.simple"),
-                        () -> List.of(SimpleBean.class, ProductionProfileBean.class)
+                        List.of("com.afrunt.spring.multienv.ctx.simple"),
+                        List.of(SimpleBean.class, ProductionProfileBean.class)
                 )
                 .addMapPropertySource(Map.of("envProp", "envValue"))
                 .activeProfiles("production")
