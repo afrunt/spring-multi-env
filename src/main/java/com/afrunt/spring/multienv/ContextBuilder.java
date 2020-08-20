@@ -96,8 +96,11 @@ public class ContextBuilder<T extends GenericApplicationContext> {
     }
 
     public ContextBuilder<T> addPropertySource(PropertySource<?> propertySource) {
-        this.propertySource.addFirstPropertySource(propertySource);
-        return new ContextBuilder<>(originalInstance, activeProfiles, defaultProfiles, this.propertySource, contextCustomizer);
+        CompositePropertySource compositePropertySource = new CompositePropertySource(randomName());
+        compositePropertySource.addFirstPropertySource(this.propertySource);
+        compositePropertySource.addFirstPropertySource(propertySource);
+
+        return new ContextBuilder<>(originalInstance, activeProfiles, defaultProfiles, compositePropertySource, contextCustomizer);
     }
 
     public ContextBuilder<T> addMapPropertySource(Map<String, Object> source) {
