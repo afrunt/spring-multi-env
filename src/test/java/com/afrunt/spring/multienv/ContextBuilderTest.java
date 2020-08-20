@@ -35,6 +35,7 @@ public class ContextBuilderTest {
                 .build();
 
         assertEquals("higherPriorityValue", ctx.getBean(SimpleBean.class).getEnvProp());
+        ctx.close();
     }
 
     @Test
