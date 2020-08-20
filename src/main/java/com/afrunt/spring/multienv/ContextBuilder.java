@@ -25,6 +25,16 @@ public class ContextBuilder<T extends GenericApplicationContext> {
         this.originalInstance = originalInstance;
     }
 
+    public ContextBuilder(T originalInstance, Collection<String> activeProfiles, Collection<String> defaultProfiles, CompositePropertySource propertySource, Function<T, T> contextCustomizer) {
+        this(originalInstance);
+        this.activeProfiles = new HashSet<>(activeProfiles);
+        this.defaultProfiles = new HashSet<>(defaultProfiles);
+        CompositePropertySource compositePropertySource = new CompositePropertySource("env-composite-property-source");
+        compositePropertySource.addFirstPropertySource(propertySource);
+        this.propertySource = compositePropertySource;
+        this.contextCustomizer = contextCustomizer;
+    }
+
     public static ContextBuilder<AnnotationConfigApplicationContext> annotationConfig(List<String> basePackages, List<Class<?>> componentClasses) {
         return annotationConfig()
                 .customizer(ctx -> {
@@ -62,13 +72,11 @@ public class ContextBuilder<T extends GenericApplicationContext> {
     }
 
     public ContextBuilder<T> customizer(Function<T, T> customizer) {
-        contextCustomizer = customizer;
-        return this;
+        return new ContextBuilder<>(originalInstance, activeProfiles, defaultProfiles, propertySource, customizer);
     }
 
     public ContextBuilder<T> activeProfiles(Collection<String> activeProfiles) {
-        this.activeProfiles = new HashSet<>(activeProfiles);
-        return this;
+        return new ContextBuilder<>(originalInstance, activeProfiles, defaultProfiles, propertySource, contextCustomizer);
     }
 
     public ContextBuilder<T> activeProfiles(String... activeProfiles) {
@@ -76,8 +84,7 @@ public class ContextBuilder<T extends GenericApplicationContext> {
     }
 
     public ContextBuilder<T> defaultProfiles(Collection<String> defaultProfiles) {
-        this.defaultProfiles = new HashSet<>(defaultProfiles);
-        return this;
+        return new ContextBuilder<>(originalInstance, activeProfiles, defaultProfiles, propertySource, contextCustomizer);
     }
 
     public ContextBuilder<T> defaultProfiles(String... defaultProfiles) {
@@ -85,13 +92,12 @@ public class ContextBuilder<T extends GenericApplicationContext> {
     }
 
     public ContextBuilder<T> resetPropertySource() {
-        propertySource = new CompositePropertySource(randomName());
-        return this;
+        return new ContextBuilder<>(originalInstance, activeProfiles, defaultProfiles, new CompositePropertySource(randomName()), contextCustomizer);
     }
 
     public ContextBuilder<T> addPropertySource(PropertySource<?> propertySource) {
         this.propertySource.addFirstPropertySource(propertySource);
-        return this;
+        return new ContextBuilder<>(originalInstance, activeProfiles, defaultProfiles, this.propertySource, contextCustomizer);
     }
 
     public ContextBuilder<T> addMapPropertySource(Map<String, Object> source) {
@@ -100,8 +106,7 @@ public class ContextBuilder<T extends GenericApplicationContext> {
     }
 
     public ContextBuilder<T> addPropertiesPropertySource(Properties properties) {
-        addPropertySource(new PropertiesPropertySource(randomName(), properties));
-        return this;
+        return addPropertySource(new PropertiesPropertySource(randomName(), properties));
     }
 
     public ContextBuilder<T> addPropertiesPropertySource(InputStream is) {
