@@ -128,6 +128,7 @@ public class ContextBuilder<T extends GenericApplicationContext> {
         notNull(propertySource, "propertySource cannot be null");
         notNull(activeProfiles, "activeProfiles cannot be null");
         notNull(defaultProfiles, "defaultProfiles cannot be null");
+        notNull(contextCustomizer, "contextCustomizer cannot be null");
     }
 
     protected T populateEnvironmentState(T ctx) {
