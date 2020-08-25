@@ -27,6 +27,16 @@ public class MultiEnvContext implements AutoCloseable {
         started = true;
     }
 
+    public MultiEnvContext lazyInitialization(){
+        this.lazyInitialization = true;
+        return this;
+    }
+
+    public MultiEnvContext eagerInitialization(){
+        this.lazyInitialization = false;
+        return this;
+    }
+
     public <T> T getBean(String envId, Class<T> type) {
         return envContextMap.get(envId).getBean(type);
     }
