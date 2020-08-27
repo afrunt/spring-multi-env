@@ -2,8 +2,7 @@ package com.afrunt.spring.multienv;
 
 import org.springframework.context.support.GenericApplicationContext;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class MultiEnvContext implements AutoCloseable {
     private final Map<String, ContextBuilder<? extends GenericApplicationContext>> contextBuildersMap;
@@ -15,24 +14,39 @@ public class MultiEnvContext implements AutoCloseable {
         this.contextBuildersMap = new HashMap<>(contextBuildersMap);
     }
 
+    public List<String> environmentNames() {
+        return new ArrayList<>(new TreeSet<>(contextBuildersMap.keySet()));
+    }
+
     public synchronized void start() {
         if (started) {
             return;
         }
 
         if (!lazyInitialization) {
-            contextBuildersMap.forEach((key, value) -> envContextMap.put(key, new EnvContext(key, value.build())));
+            contextBuildersMap.forEach((key, value) -> startEnvironmentContext(key));
         }
 
         started = true;
     }
 
-    public MultiEnvContext lazyInitialization(){
+    public synchronized void startEnvironmentContext(String envId) {
+        if (!contextBuildersMap.containsKey(envId)) {
+            throw new IllegalArgumentException("Environment " + envId + " is unknown");
+        }
+
+        if (!envContextMap.containsKey(envId)) {
+            ContextBuilder<? extends GenericApplicationContext> builder = contextBuildersMap.get(envId);
+            envContextMap.put(envId, new EnvContext(envId, builder.build()));
+        }
+    }
+
+    public MultiEnvContext lazyInitialization() {
         this.lazyInitialization = true;
         return this;
     }
 
-    public MultiEnvContext eagerInitialization(){
+    public MultiEnvContext eagerInitialization() {
         this.lazyInitialization = false;
         return this;
     }

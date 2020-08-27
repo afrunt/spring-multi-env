@@ -3,6 +3,7 @@ package com.afrunt.spring.multienv;
 import com.afrunt.spring.multienv.ctx.simple.SimpleBean;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,6 +19,7 @@ public class MultiEnvContextTest {
 
         multiEnvContext.start();
 
+        assertIterableEquals(List.of("dev"), multiEnvContext.environmentNames());
         assertTrue(multiEnvContext.isStarted());
 
         SimpleBean simpleBean = multiEnvContext.getBean("dev", SimpleBean.class);
